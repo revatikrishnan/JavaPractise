@@ -1,0 +1,15 @@
+<testcases>
+<TestCase id="1" suiteName="Login" desc="" enable="">
+<action name="loginToFlipkart">
+<input username="" password="" expected="SuccessfulLogin"></input>
+</action>
+</TestCase>
+
+<TestCase id="2" suiteName="Login" desc="" enable="">
+<action name="loginToFlipkart">
+<input username="" password="" expected="ErrorMessage"></input>
+</action>
+
+
+</TestCase>
+</testcases>

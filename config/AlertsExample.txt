@@ -1,0 +1,52 @@
+package dayFour;
+
+import org.openqa.selenium.Alert;
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoAlertPresentException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
+public class AlertsExample {
+
+	public static void main(String[] args) throws InterruptedException {
+		WebDriver driver = new FirefoxDriver();
+		driver.manage().window().maximize();
+		
+		// Launch AUT
+		//driver.get("http://www.w3schools.com/js/tryit.asp?filename=tryjs_alert");
+		//driver.get("http://www.w3schools.com/js/tryit.asp?filename=tryjs_confirm");
+		driver.get("http://www.w3schools.com/js/tryit.asp?filename=tryjs_prompt");
+		
+		// Switch to frame
+		driver.switchTo().frame(driver.findElement(By.id("iframeResult")));
+		Thread.sleep(2000);
+		// Click "Try it" Button
+		driver.findElement(By.xpath("//*[.='Try it']")).click();
+		
+		try {
+			// Checking Alert
+			Alert alert = driver.switchTo().alert();
+			System.out.println("Alert is Present");
+			System.out.println("Alert Message - " + alert.getText());
+			Thread.sleep(3000);
+			
+			// Enter some text to alert
+			alert.sendKeys("Selenium");
+			Thread.sleep(2000);
+			alert.accept();
+			//alert.dismiss();
+			
+			// For COnfirm and Prompt box only
+			System.out.println("Return Message - " + driver.findElement(By.id("demo")).getText());
+		}
+		catch(NoAlertPresentException e)
+		{
+			System.out.println("Alert is not Present");
+		}
+		
+		// Quit Browser
+		Thread.sleep(5000);
+		driver.quit();
+	}
+
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<testcases>
+<testcase suitename="Login" id="1" name="Login to FLIPKART With valid username and password" enable="no">
+	<input username="9663001042" password="revu" expected="SUCCESS"/>
+</testcase>
+<testcase suitename="Login" id="2" name="Login to FLIPKART with valid username and invalid password" enable="no">
+	<input username="976543235" password="rev" expected="FAILURE"/>
+</testcase>
+<testcase suitename="Login" id="3" name="Login to FLIPKART with invalid username and valid password" enable="no">
+	<input username="966300" password="flipif" expected="FAILURE"/>
+</testcase>
+<testcase suitename="Login" id="4" name="Login to FLIPKART with invalid username and invalid password" enable="yes">
+	<input username="subbu" password="rev" expected="SUCCESS"/>
+</testcase>
+</testcases>
