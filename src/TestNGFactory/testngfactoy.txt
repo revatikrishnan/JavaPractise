@@ -1,0 +1,945 @@
+package org.company.data;
+
+import java.util.Hashtable;
+
+public class TestCaseDetails {
+
+	private String testCaseName;
+	private String enable;
+	private String description;
+	private String suiteName;
+	private String groupName;
+	
+	String actionName[];
+	String actionDescription[];
+	Hashtable<String, String> actionInputs[];
+	public String getTestCaseName() {
+		return testCaseName;
+	}
+	public void setTestCaseName(String testCaseName) {
+		this.testCaseName = testCaseName;
+	}
+	public String getEnable() {
+		return enable;
+	}
+	public void setEnable(String enable) {
+		this.enable = enable;
+	}
+	public String getDescription() {
+		return description;
+	}
+	public void setDescription(String description) {
+		this.description = description;
+	}
+	public String getSuiteName() {
+		return suiteName;
+	}
+	public void setSuiteName(String suiteName) {
+		this.suiteName = suiteName;
+	}
+	public String[] getActionName() {
+		return actionName;
+	}
+	public void setActionName(String[] actionName) {
+		this.actionName = actionName;
+	}
+	public String[] getActionDescription() {
+		return actionDescription;
+	}
+	public void setActionDescription(String[] actionDescription) {
+		this.actionDescription = actionDescription;
+	}
+	public Hashtable<String, String>[] getActionInputs() {
+		return actionInputs;
+	}
+	public void setActionInputs(Hashtable<String, String>[] actionInputs) {
+		this.actionInputs = actionInputs;
+	}
+	public String getGroupName() {
+		return groupName;
+	}
+	public void setGroupName(String groupName) {
+		this.groupName = groupName;
+	}
+	
+	
+}
+---------------------------------------------------------------------------------------
+package org.company.data;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.util.Hashtable;
+
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.stax.StAXSource;
+
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.NodeList;
+
+public class XMLParser {
+
+	private int numberOfTestCases;
+	
+	public TestCaseDetails testCaseDetails[];
+	
+	public static void main(String[] args) {
+		TestCaseDetails[] test=new XMLParser().extractXML();
+		System.out.println(test[0].getActionInputs()[0].get("username"));
+	}
+	
+	@SuppressWarnings("finally")
+	public TestCaseDetails[] extractXML(){
+		System.setProperty("javax.xml.transform.TransformerFactory",
+				"com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl");
+		XMLInputFactory factory=XMLInputFactory.newInstance();
+		
+		FileInputStream source;
+		
+		try {
+			File folder = new File(".//TestData");
+			File[] listOfFiles = folder.listFiles();
+			for(int i = 0; i < listOfFiles.length; i++){
+				String filename = listOfFiles[i].getName();
+				if(filename.endsWith(".xml")||filename.endsWith(".XML"))
+				{
+	            source = new FileInputStream(".\\TestData\\"+filename);
+	            XMLStreamReader reader = factory.createXMLStreamReader(source);
+	
+	            DOMResult result = new DOMResult();
+	            TransformerFactory transFactory = TransformerFactory.newInstance();
+	            Transformer transformer = transFactory.newTransformer();
+	            transformer.transform(new StAXSource(reader), result);
+	
+	            Document document = (Document)result.getNode();
+	
+	            // To Extract Test Case details
+	
+	            NodeList testCaseNode = document.getElementsByTagName("testcase");
+	
+	            numberOfTestCases = testCaseNode.getLength();
+	            testCaseDetails = new TestCaseDetails[numberOfTestCases];
+	
+	            // int eachTest = 0;
+	            for (int eachTest = 0; eachTest < numberOfTestCases; eachTest++) {
+	
+	                // Get the test case Name and enable value
+	                NamedNodeMap attributes = testCaseNode.item(eachTest).getAttributes();
+	                int length = attributes.getLength();
+	                testCaseDetails[eachTest] = new TestCaseDetails();
+	                for (int attributesIterator = 0; attributesIterator < length; attributesIterator++) {
+	
+	                    String attribKey = attributes.item(attributesIterator).getLocalName();
+	                    String attribvalue = attributes.item(attributesIterator).getNodeValue();
+	
+	                    if (attribKey.equalsIgnoreCase("testCaseName")) {
+	                        testCaseDetails[eachTest].setTestCaseName(attribvalue);
+	                    }
+	
+	                    if (attribKey.equalsIgnoreCase("suiteName")) {
+	                        testCaseDetails[eachTest].setSuiteName(attribvalue);
+	                    }
+	
+	                    if (attribKey.equalsIgnoreCase("enable")) {
+	                        testCaseDetails[eachTest].setEnable(attribvalue);
+	                    }
+	                    if (attribKey.equalsIgnoreCase("description")) {
+	                        testCaseDetails[eachTest].setDescription(attribvalue);
+	                    }
+	                    if (attribKey.equalsIgnoreCase("groups")) {
+	                        testCaseDetails[eachTest].setGroupName(attribvalue);
+	                    }
+	
+	                }
+	
+	                // Get the Child Node values of each test Case
+	                // Here trying to get actions for these tests in order and put parameters for each
+	                // of the action
+	
+	                NodeList childNodesOfTest = testCaseNode.item(eachTest).getChildNodes();
+	                int numberOfChildrenForTestCase = childNodesOfTest.getLength();
+	
+	                int noOfActions = 0;
+	
+	                for (int eachChildOfTest = 0; eachChildOfTest < numberOfChildrenForTestCase; eachChildOfTest++) {
+	
+	                    if (childNodesOfTest.item(eachChildOfTest).getLocalName() != null
+	                            && childNodesOfTest.item(eachChildOfTest).getLocalName()
+	                                    .equalsIgnoreCase("actions")) {
+	                        NodeList childNodesOfActions = childNodesOfTest.item(eachChildOfTest)
+	                                .getChildNodes();
+	
+	                        // Calculating number of actions in each test case
+	                        for (int eachActionChildNodes = 0; eachActionChildNodes < childNodesOfActions
+	                                .getLength(); eachActionChildNodes++) {
+	
+	                            if (childNodesOfActions.item(eachActionChildNodes).getLocalName() != null
+	                                    && childNodesOfActions.item(eachActionChildNodes)
+	                                            .getLocalName().equalsIgnoreCase("action")) {
+	                                noOfActions++;
+	                            }
+	                        }
+	
+	                        /*Get each of the actions in Order that it has to be performed 
+	                         * Order according to Step attribute in the XML 
+	                         * 
+	                         */
+	
+	                        String actionsInOrder[] = new String[noOfActions];
+	                        String actionsInOrderDes[] = new String[noOfActions];
+	                        @SuppressWarnings("unchecked")
+	                        Hashtable<String, String> actionInputs[] = new Hashtable[noOfActions];
+	
+	                        for (int eachActionChildNodes = 0; eachActionChildNodes < childNodesOfActions
+	                                .getLength(); eachActionChildNodes++) {
+	
+	                            if (childNodesOfActions.item(eachActionChildNodes).getLocalName() != null
+	                                    && childNodesOfActions.item(eachActionChildNodes)
+	                                            .getLocalName().equalsIgnoreCase("action")) {
+	
+	                                NamedNodeMap actionAttributes = childNodesOfActions.item(
+	                                        eachActionChildNodes).getAttributes();
+	
+	                                int stepNo = 0;
+	                                String actionName = "";
+	                                String actionDescription = "";
+	
+	                                // Get the actions in Order of Execution
+	                                for (int actionAttributesIterator = 0; actionAttributesIterator < actionAttributes
+	                                        .getLength(); actionAttributesIterator++) {
+	
+	                                    String attribKey = actionAttributes.item(
+	                                            actionAttributesIterator).getLocalName();
+	                                    String attribvalue = actionAttributes.item(
+	                                            actionAttributesIterator).getNodeValue();
+	
+	                                    if (attribKey.equalsIgnoreCase("step")) {
+	
+	                                        stepNo = Integer.parseInt(attribvalue);
+	
+	                                    }
+	                                    if (attribKey.equalsIgnoreCase("actionName")) {
+	
+	                                        actionName = attribvalue;
+	
+	                                    }
+	                                    if (attribKey.equalsIgnoreCase("actionDescription")) {
+	
+	                                    	actionDescription = attribvalue;
+	
+	                                    }
+	
+	                                }
+	
+	                                actionsInOrder[stepNo - 1] = actionName;
+	                                actionsInOrderDes[stepNo - 1] = actionDescription;
+	
+	                                /*
+	                                 * Extracting the input parameters for each action
+	                                 */
+	
+	                                actionInputs[stepNo - 1] = new Hashtable<String, String>();
+	                                NodeList inputsToEachAction = childNodesOfActions.item(
+	                                        eachActionChildNodes).getChildNodes();
+	
+	                                for (int eachActionInput = 0; eachActionInput < inputsToEachAction
+	                                        .getLength(); eachActionInput++) {
+	
+	                                    if (inputsToEachAction.item(eachActionInput).getLocalName() != null
+	                                            && inputsToEachAction.item(eachActionInput)
+	                                                    .getLocalName().equalsIgnoreCase("input")) {
+	
+	                                        NamedNodeMap attributesInput = inputsToEachAction.item(
+	                                                eachActionInput).getAttributes();
+	                                        int attributesInputLength = attributesInput.getLength();
+	
+	                                        for (int attributesIterator = 0; attributesIterator < attributesInputLength; attributesIterator++) {
+	
+	                                            String attribKey = attributesInput.item(
+	                                                    attributesIterator).getLocalName();
+	                                            String attribvalue = attributesInput.item(
+	                                                    attributesIterator).getNodeValue();
+	
+	                                            actionInputs[stepNo - 1].put(attribKey, attribvalue);
+	                                        }
+	                                    }
+	
+	                                }
+	
+	                            }
+	
+	                        }
+	                        testCaseDetails[eachTest].setActionName(actionsInOrder);
+	                        testCaseDetails[eachTest].setActionDescription(actionsInOrderDes);
+	                        testCaseDetails[eachTest].setActionInputs(actionInputs);
+	                    }
+	
+	                }
+	            }
+			
+			}
+			
+			}
+
+        }
+        catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (Exception e) {
+            System.err.println("Something went wrong, this might help :n" + e.getMessage());
+        }
+        
+        return testCaseDetails;
+        
+	}
+}
+------------------------------------------------------------------------------------------------
+package org.company.helpers;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.MessageFormat;
+
+import org.apache.commons.io.FileUtils;
+
+public class ConfigurationsUtil {
+
+	private String browser;
+	private String testEnv;
+	private String environment;
+	private String groupName;
+	private String applicationUrl;
+	
+	private static ConfigurationsUtil configutil;
+	private ConfigurationsUtil() {
+		// TODO Auto-generated constructor stub
+	}
+	
+	public static ConfigurationsUtil getInstance(){
+		if(configutil==null)
+			configutil=new ConfigurationsUtil();
+		return configutil;
+	}
+	
+	public String getBrowser() {
+		browser =System.getProperty("browser");
+		if(browser==null) browser=FileUtil.readProperties("browser");
+		return browser;
+	}
+	public String getTestEnv() {
+		testEnv=System.getProperty("testEnv");
+		if(testEnv==null) testEnv=FileUtil.readProperties("testEnv");
+		return testEnv;
+	}
+	public String getEnvironment() {
+		environment=System.getProperty("environment");
+		if(environment!=null && environment.contains("${environment}")) environment=FileUtil.readProperties("environment");
+		return environment;
+	}
+	public String getGroupName() {
+		groupName=System.getProperty("groupName");
+		System.out.println(groupName);
+		if(groupName==null)
+			groupName=FileUtil.readProperties("groupName");
+		System.out.println(groupName);
+		return groupName;
+	}
+	public String getApplicationUrl() {
+		applicationUrl=System.getProperty("applicationUrl");
+		if(applicationUrl==null) applicationUrl=FileUtil.readProperties("applicationURl");
+		applicationUrl=MessageFormat.format(applicationUrl, getTestEnv());
+		System.out.println(applicationUrl);
+		return applicationUrl;
+	}
+		
+	
+}
+----------------------------------------------------------------------------------------
+package org.company.helpers;
+
+import java.lang.reflect.Method;
+import java.util.Hashtable;
+
+import org.company.pages.ToolLoginPage;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.PageFactory;
+import org.testng.Reporter;
+
+public class DigitalDistributionManager {
+	
+	static ToolLoginPage login;
+	
+	
+	public static boolean invokeMethod(String className,String methodName,Hashtable<String, String> actionInputstable){
+		
+		boolean statusCode=false;
+		try{
+			Class<?> classToCall= Class.forName(className);
+			Class[] methodParams=new Class[] { actionInputstable.getClass() };
+			
+			Method methodToexecute=classToCall.getDeclaredMethod(methodName, methodParams);
+			statusCode = (boolean) methodToexecute.invoke(classToCall.newInstance(), new Object[] { actionInputstable });
+		}
+		catch (Exception e) {
+			Reporter.log(e.toString(),true);
+			e.printStackTrace();
+		}
+		return statusCode;
+	}
+	
+	public static boolean loginToToolBelt(Hashtable<String, String> input){
+		WebDriver driver=DriverFactory.getInstance().getDriver();
+		login=PageFactory.initElements(driver ,ToolLoginPage.class);
+		return login.loginToToolbelt(input.get("username"), input.get("password"));
+		
+	}
+}
+--------------------------------------------------------------------------------------------------------------------
+package org.company.helpers;
+
+import java.util.HashMap;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxProfile;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+import org.openqa.selenium.ie.InternetExplorerDriver;
+import org.openqa.selenium.remote.CapabilityType;
+import org.openqa.selenium.remote.DesiredCapabilities;
+
+public class DriverFactory
+{
+
+   private DriverFactory()
+   {
+      
+   }
+   private static DriverFactory instance = new DriverFactory();
+
+   public static DriverFactory getInstance()
+   {
+      return instance;
+   }
+
+   ThreadLocal<WebDriver> driver = new ThreadLocal<WebDriver>() // thread local driver object for webdriver
+   {
+      @Override
+      protected WebDriver initialValue()
+      {
+    	  ConfigurationsUtil config=ConfigurationsUtil.getInstance();
+			
+			String browser=config.getBrowser();
+			if(browser.toLowerCase().contains("firefox")){
+				FirefoxProfile prof = new FirefoxProfile();
+				prof.setPreference("browser.download.folderList", 2);
+				prof.setPreference("browser.download.dir",GlobalImpl
+						.downloads);
+				prof.setPreference("browser.helperApps.neverAsk.saveToDisk", "application/zip");
+				System.setProperty("webdriver.gecko.driver", GlobalImpl.firefoxdriver);
+				return new FirefoxDriver(prof);
+			}
+			else if(browser.toLowerCase().contains("chrome")){
+				System.setProperty("webdriver.chrome.driver", GlobalImpl.chromedriver);
+				HashMap<String, Object> chromePrefs = new HashMap<String, Object>();
+			    chromePrefs.put("profile.default_content_settings.popups", 0);
+			    chromePrefs.put("download.default_directory", GlobalImpl.downloads);
+			    ChromeOptions options = new ChromeOptions();
+			    HashMap<String, Object> chromeOptionsMap = new HashMap<String, Object>();
+			    options.setExperimentalOption("prefs", chromePrefs);
+			    options.addArguments("--test-type");
+			    options.addArguments("--disable-extensions"); //to disable browser extension popup
+			  
+			    DesiredCapabilities cap = DesiredCapabilities.chrome();
+			    cap.setCapability(ChromeOptions.CAPABILITY, chromeOptionsMap);
+			    cap.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
+			    cap.setCapability(ChromeOptions.CAPABILITY, options);
+				
+				return new ChromeDriver(cap);
+			}
+			else if(browser.toLowerCase().contains("ie")){
+				System.setProperty("webdriver.ie.driver", GlobalImpl.iedriver);
+				return new InternetExplorerDriver();
+			}
+			else{
+				return new HtmlUnitDriver();
+			}
+			
+			
+      }
+   };
+
+   public WebDriver getDriver() // call this method to get the driver object and launch the browser
+   {
+      return driver.get();
+   }
+
+   public void removeDriver() // Quits the driver and closes the browser
+   {
+      driver.get().quit();
+      driver.remove();
+   }
+}
+------------------------------------------------------------------------------
+package org.company.helpers;
+
+import java.io.File;
+import java.util.ArrayList;
+
+public class GlobalImpl {
+
+	public static String baseloc=System.getProperty("user.dir");
+	
+	public static String firefoxdriver=baseloc+"/drivers/geckodriver.exe";
+	
+	public static String chromedriver=baseloc+"/drivers/chromedriver.exe";
+	
+	public static String iedriver=baseloc+"/drivers/IEDriverServer.exe";
+	
+	public static String resources=baseloc+"/resources";
+	
+	public static String screenshots=baseloc+"/screenshots";
+	
+	public static String uploads=baseloc+"/uploads";
+	
+	public static String downloads=baseloc+"\\downloads";
+	
+	public static ArrayList<String> passedtestcase=new ArrayList<String>();
+	
+	public static ArrayList<String> failedtestcase=new ArrayList<String>();
+
+	public static String screenshotName="";
+	
+	
+}
+---------------------------------------------------------------------------------
+package org.company.helpers;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.By;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxProfile;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+import org.openqa.selenium.ie.InternetExplorerDriver;
+import org.openqa.selenium.remote.CapabilityType;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+public class SeleniumUtil {
+
+	private WebDriver driver;
+	private static SeleniumUtil selUtil;
+	private SeleniumUtil() {
+		// TODO Auto-generated constructor stub
+	}
+	
+	public static SeleniumUtil getInstance(){
+		if(selUtil==null)
+			selUtil=new SeleniumUtil();
+		return selUtil;
+	}
+	
+	public void explicitWaitforVisibilityOf(WebElement ele){
+		WebDriver driver=DriverFactory.getInstance().getDriver();
+		WebDriverWait wait=new WebDriverWait(driver, 60);
+		wait.until(ExpectedConditions.visibilityOf(ele));
+	}
+	
+	public void dropdown(WebElement e,String visibleText){
+		Select sel=new Select(e);
+		sel.selectByVisibleText(visibleText);;
+	}
+	
+	public void takeScreenshot(String filename){
+		try {
+			WebDriver driver=DriverFactory.getInstance().getDriver();
+			File srcfile=((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
+			File dest=new File(GlobalImpl.screenshots+"/filename");
+		
+			FileUtils.copyFile(srcfile,dest );
+		} catch (IOException e) {
+			
+			e.printStackTrace();
+		}
+	}
+	
+}
+------------------------------------------------------------------------------------------
+package org.company.reports;
+
+import java.io.File;
+import java.lang.reflect.Method;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.company.helpers.GlobalImpl;
+import org.testng.IMethodInstance;
+import org.testng.IReporter;
+import org.testng.IResultMap;
+import org.testng.ISuite;
+import org.testng.ISuiteResult;
+import org.testng.ITestContext;
+import org.testng.ITestNGMethod;
+import org.testng.ITestResult;
+import org.testng.Reporter;
+import org.testng.xml.XmlSuite;
+ 
+import com.relevantcodes.extentreports.ExtentReports;
+import com.relevantcodes.extentreports.ExtentTest;
+import com.relevantcodes.extentreports.LogStatus;
+ 
+public class ExtentReporterNG implements IReporter {
+     ExtentReports extent;
+ 
+    
+  
+ 
+   /* private void buildTestNodes(IResultMap tests, LogStatus status) {
+        ExtentTest test;
+        TestBase base=new TestBase();
+        if (tests.size() > 0) {
+            for (ITestResult result : tests.getAllResults()) {
+                test = extent.startTest(result.getMethod().getMethodName());
+                
+                test.getTest().startedTime=getTime(result.getStartMillis());
+                test.getTest().endedTime=getTime(result.getEndMillis());
+                
+ 
+                for (String group : result.getMethod().getGroups())
+                    test.assignCategory(group);
+ 
+                if (result.getThrowable() != null) {
+                    test.log(status, result.getThrowable().getMessage());
+                }
+                else {
+                    
+                    test.log(status, "Test "+" '"+result.getName()+"' "+ status.toString().toLowerCase() + "ed");
+                }
+ 
+                extent.endTest(test);
+            }
+        }
+    }*/
+ 
+     private void buildTestNodes(IResultMap tests, LogStatus status) {
+         ExtentTest test;
+        
+         int passcount=0;
+         int failcount=0;
+         if (tests.size() > 0) {
+             for (ITestResult result : tests.getAllResults()) {
+                 if (result.getThrowable() != null) {
+                     String testcaseName=GlobalImpl.failedtestcase.get(failcount).split(";")[0];
+                     String screenshotName=GlobalImpl.failedtestcase.get(failcount).split(";")[1];
+                     test = extent.startTest(testcaseName);
+                     failcount=failcount+1;
+                     test.log(status, result.getThrowable().getMessage());
+                     test.log(status, "Test "+status.toString().toLowerCase() + "ed");
+                     test.log(status, "Screenshot added : ");
+                     test.log(status, test.addScreenCapture(GlobalImpl.screenshots+"\\"+screenshotName+".jpg"));
+                 }
+                 else{
+                     test = extent.startTest(GlobalImpl.passedtestcase.get(passcount));
+                     passcount=passcount+1;
+                     test.log(status, "Test "+status.toString().toLowerCase() + "ed");
+                 }
+                 
+                 test.setStartedTime(getTime(result.getStartMillis()));
+                 test.setEndedTime(getTime(result.getEndMillis()));
+                 //test.getTest().startedTime=getTime(result.getStartMillis());
+                 //test.getTest().endedTime=getTime(result.getEndMillis()));
+                 
+                
+                 for (String group : result.getMethod().getGroups())
+                     test.assignCategory(group);
+  
+  
+                 extent.endTest(test);
+             }
+         }
+     }
+    private Date getTime(long millis) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(millis);
+        return calendar.getTime();        
+    }
+
+    public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites, String outputDirectory) {
+        extent = new ExtentReports(outputDirectory + File.separator + "Extent.html", true);
+ 
+        for (ISuite suite : suites) {
+            Map<String, ISuiteResult> result = suite.getResults();
+ 
+            for (ISuiteResult r : result.values()) {
+                ITestContext context = r.getTestContext();
+                
+                for (String s : Reporter.getOutput()) {
+                    extent.setTestRunnerOutput(s);
+                }
+                buildTestNodes(context.getPassedTests(), LogStatus.PASS);
+                buildTestNodes(context.getFailedTests(), LogStatus.FAIL);
+                buildTestNodes(context.getSkippedTests(), LogStatus.SKIP);
+            }
+        }
+ 
+        extent.flush();
+        extent.close();
+    }
+}
+----------------------------------------------------------------------------------------------------
+package org.company.tests;
+
+import java.util.Hashtable;
+
+import org.company.data.TestCaseDetails;
+import org.company.helpers.DigitalDistributionManager;
+import org.company.helpers.GlobalImpl;
+import org.company.helpers.SeleniumUtil;
+import org.company.reports.ExtentReporterNG;
+import org.testng.Assert;
+import org.testng.ITest;
+import org.testng.Reporter;
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
+
+
+@Listeners(ExtentReporterNG.class)
+public class BATTest extends TestBase implements ITest {
+
+	private TestCaseDetails eachTestCaseDetail;
+	private int order;
+	
+	public BATTest(TestCaseDetails eachTestCaseDetail,int order) {
+		this.eachTestCaseDetail=eachTestCaseDetail;
+		this.order=order;
+	}
+	
+	public int getOrder(){
+		return order;
+		
+	}
+	
+	
+	@Test
+	public void testBAT(){
+		int testStepNo = 1;
+        Reporter.log(
+                "########## Executing the test case from Suite : "
+                        + eachTestCaseDetail.getSuiteName(), true);
+        Reporter.log("##### Executing the test case : " + eachTestCaseDetail.getDescription(), true);
+        String actionsNames[] = eachTestCaseDetail.getActionName();
+        String actionsDescriptions[] = eachTestCaseDetail.getActionDescription();
+        Hashtable<String, String> actionsInputsTableArray[] = eachTestCaseDetail.getActionInputs();
+        try {
+            for (int eachAction = 0; eachAction < actionsNames.length; eachAction++) {
+                // Converting first letter of action to lower case.
+                String methodName = actionsNames[eachAction].substring(0, 1).toLowerCase()
+                        + actionsNames[eachAction].substring(1);
+                Reporter.log("*****Test Step " + testStepNo + ": "
+                        + actionsDescriptions[eachAction] + " *****", true);
+                boolean isSuccess = DigitalDistributionManager.invokeMethod("org.company.helpers.DigitalDistributionManager", methodName,
+                        actionsInputsTableArray[eachAction]);
+                if (!isSuccess) {
+                	GlobalImpl.failedtestcase.add(eachTestCaseDetail.getTestCaseName()+";"+GlobalImpl.screenshotName);
+                    Assert.fail("-----Test Step: " + actionsDescriptions[eachAction] + " is failed");
+                }
+                testStepNo++;
+            }
+            
+            if((testStepNo-1)==actionsNames.length){
+            	GlobalImpl.passedtestcase.add(eachTestCaseDetail.getTestCaseName()+";"+GlobalImpl.screenshotName);
+            }
+            
+            
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        catch (AssertionError ae) {
+            
+            Reporter.log("Assertion error exception.."+ae.getMessage(), true);
+            
+            Assert.fail("Testcase failed due to assertion error.."+ae.getMessage());
+
+        }
+	}
+	
+	
+	@Override
+	public String getTestName() {
+		
+		return eachTestCaseDetail.getTestCaseName();
+	}
+
+}
+---------------------------------------------------------------------------------
+package org.company.tests;
+
+import org.company.data.TestCaseDetails;
+import org.company.data.XMLParser;
+import org.company.helpers.ConfigurationsUtil;
+import org.testng.Reporter;
+import org.testng.annotations.Factory;
+
+
+
+public class DDTestFactory {
+
+	@Factory
+	public Object[] createInstances(){
+		XMLParser xml=new XMLParser();
+		TestCaseDetails testCaseDetails[] = null;
+		ConfigurationsUtil config=ConfigurationsUtil.getInstance();
+		Object[] result=null;
+		
+		try{
+		testCaseDetails=xml.extractXML();
+		
+		int countOfTestcases=0;
+		
+		for(int i=0;i<testCaseDetails.length;i++){
+			System.out.println(config.getGroupName());
+			System.out.println(testCaseDetails[i].getGroupName());
+			if((testCaseDetails[i].getGroupName().contains(config.getGroupName()))&& (testCaseDetails[i].getEnable().equalsIgnoreCase("true"))){
+				countOfTestcases++;
+			}
+		}
+		
+		result=new Object[countOfTestcases];
+		int j=0;
+		for(int i=0;i<testCaseDetails.length;i++){
+			if((testCaseDetails[i].getGroupName().contains(config.getGroupName()))&& (testCaseDetails[i].getEnable().equalsIgnoreCase("true"))){
+				result[j]=new BATTest(testCaseDetails[i], i);
+				j++;
+			}
+		}
+		
+		}
+		catch (Exception e) {
+			Reporter.log("Error in DDTestFactory class "+e.getMessage());
+			e.printStackTrace();
+		}
+		return result;
+	}
+}
+----------------------------------------------------------------------------------
+package org.company.tests;
+
+import java.util.concurrent.TimeUnit;
+
+import org.company.helpers.ConfigurationsUtil;
+import org.company.helpers.DriverFactory;
+import org.company.helpers.FileUtil;
+import org.openqa.selenium.WebDriver;
+import org.testng.Reporter;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeTest;
+
+public class TestBase {
+
+	WebDriver driver;
+	ConfigurationsUtil config=ConfigurationsUtil.getInstance();
+	FileUtil fileutil=FileUtil.getInstance();
+	@BeforeTest
+	public void beforeExecution(){
+		fileutil.deleteAllFilesFromScreenshot();
+		Reporter.log("This is the automation of test cases for Digital Distribution");
+		Reporter.log("Please find logs of the test run below");
+	}
+	
+	
+	@BeforeMethod
+	public void setUp(){
+		  driver = DriverFactory.getInstance().getDriver();
+		  driver.get(config.getApplicationUrl());
+		  driver.manage().window().maximize();
+			
+		  driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+	}
+	
+	@AfterMethod
+	public void tearDown(){
+		DriverFactory.getInstance().removeDriver();
+	}
+}
+-------------------------------------------------------------------------------------
+package org.company.tests;
+
+import org.testng.IMethodInstance;
+import org.testng.IMethodInterceptor;
+import org.testng.ITestContext;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+/**
+ * @author rcourtright
+ *         Date: 8/11/14
+ *         Time: 2:37 PM
+ */
+public class TestCaseInterceptorListner implements IMethodInterceptor {
+
+
+	public List<IMethodInstance> intercept(List<IMethodInstance> methods, ITestContext context) {
+		Map<Integer,IMethodInstance> orders = new TreeMap<Integer,IMethodInstance>();
+		for (IMethodInstance iMethodInstance : methods) {
+			/*if (!iMethodInstance.getMethod().getMethodName().equals("justDoIt")) {
+                continue;
+            }
+            Object obj = iMethodInstance.getInstance();
+            if (!(obj instanceof TestClass1)) {
+                continue;
+            }
+            TestClass1 ersatzTest = (TestClass1)obj;
+            String order = ersatzTest.getOrder();
+            orders.put(order,iMethodInstance);*/
+			
+			if (iMethodInstance.getMethod().getMethodName().equals("testBAT")) {  
+				Object obj = iMethodInstance.getInstance();
+				if (obj instanceof BATTest) {
+					BATTest curTest = (BATTest)obj;
+					int order = curTest.getOrder();
+					orders.put(order,iMethodInstance);
+					continue;
+				}
+			} 
+			
+		}
+		List<IMethodInstance> tests = new ArrayList<IMethodInstance>(orders.size());
+		for (int order : orders.keySet()) {
+			IMethodInstance test = orders.get(order);
+			tests.add(test);
+		}
+		return tests;
+	}
+}
+-------------------------------------------------------------------
